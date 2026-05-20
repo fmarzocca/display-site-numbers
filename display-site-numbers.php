@@ -3,7 +3,7 @@
   Plugin Name: Display Site Numbers
   Plugin URI: https://github.com/fmarzocca/display-site-numbers
   Description: A widget to display all relevant site content numbers
-  Version: 1.1
+  Version: 1.2
   Author: Fabio Marzocca
   Author URI: http://www.marzocca.net
   Text Domain:   display-site-numbers
@@ -61,19 +61,19 @@ public function widget( $args, $instance ) {
     $title = apply_filters( 'widget_title', $instance['title'] );
 
     // before and after widget arguments are defined by themes
-    echo $args['before_widget'];
+    echo wp_kses_post( $args['before_widget'] );
     if ( ! empty( $title ) )
-        echo $args['before_title'] . $title . $args['after_title'];
+        echo wp_kses_post( $args['before_title'] ) . esc_html( $title ) . wp_kses_post( $args['after_title'] );
 
     // This is where you run the code and display the output
     $count_arr = DSN_counters();
     echo '<div class="DSN-wrapper"><ul>';
     foreach ($count_arr as $key => $count) {
         $label = ucwords(str_replace('_', ' ', $key)); // Converts 'custom_post' to 'Custom Post'
-        DSN_dressit(__($label, 'display-site-numbers'), $count);
+        DSN_dressit( esc_html( $label ), absint( $count ) );
     }
     echo "</ul></div>";
-    echo $args['after_widget'];
+    echo wp_kses_post( $args['after_widget'] );
 }
 
 
@@ -103,27 +103,27 @@ public function widget( $args, $instance ) {
     // Widget admin form
     ?>
 <p>
-<label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Title:', 'display-site-numbers'); ?></label>
-<input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>" />
+<label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e('Title:', 'display-site-numbers'); ?></label>
+<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'title' ) ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>" />
 </p>
 <p>
 
-<label class="description" for="element_1"><?php _e('Select what to display:', 'display-site-numbers'); ?></label>
+<label class="description" for="element_1"><?php esc_html_e('Select what to display:', 'display-site-numbers'); ?></label>
     <span>
-      <ul><li><input id="<?php echo $this->get_field_id('ck_posts'); ?>" name="<?php echo $this->get_field_name( 'ck_posts' ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_posts ); ?> />
-<label class="choice" ><?php _e('Posts count', 'display-site-numbers'); ?></label></li>
-<li><input id="<?php echo $this->get_field_id('ck_pages'); ?>" name="<?php echo $this->get_field_name( 'ck_pages' ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_pages ); ?> />
-<label class="choice" ><?php _e('Pages count', 'display-site-numbers'); ?></label></li>
-<li><input id="<?php echo $this->get_field_id('ck_cats'); ?>" name="<?php echo $this->get_field_name( 'ck_cats' ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_cats ); ?> />
-<label class="choice" ><?php _e('Categories count', 'display-site-numbers'); ?></label></li>
-<li><input id="<?php echo $this->get_field_id('ck_auth'); ?>" name="<?php echo $this->get_field_name( 'ck_auth' ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_auth ); ?> />
-<label class="choice" ><?php _e('Authors count', 'display-site-numbers'); ?></label></li>
-<li><input id="<?php echo $this->get_field_id('ck_tags'); ?>" name="<?php echo $this->get_field_name( 'ck_tags' ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_tags ); ?> />
-<label class="choice" ><?php _e('Tags count', 'display-site-numbers'); ?></label></li>
-<li><input id="<?php echo $this->get_field_id('ck_comm'); ?>" name="<?php echo $this->get_field_name( 'ck_comm' ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_comm ); ?> />
-<label class="choice" ><?php _e('Comments count', 'display-site-numbers'); ?></label></li>
-<li><input id="<?php echo $this->get_field_id('ck_imgs'); ?>" name="<?php echo $this->get_field_name( 'ck_imgs' ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_imgs ); ?> />
-<label class="choice" ><?php _e('Images count', 'display-site-numbers'); ?></label></li></span>
+      <ul><li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_posts' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_posts' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_posts ); ?> />
+<label class="choice" ><?php esc_html_e('Posts count', 'display-site-numbers'); ?></label></li>
+<li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_pages' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_pages' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_pages ); ?> />
+<label class="choice" ><?php esc_html_e('Pages count', 'display-site-numbers'); ?></label></li>
+<li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_cats' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_cats' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_cats ); ?> />
+<label class="choice" ><?php esc_html_e('Categories count', 'display-site-numbers'); ?></label></li>
+<li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_auth' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_auth' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_auth ); ?> />
+<label class="choice" ><?php esc_html_e('Authors count', 'display-site-numbers'); ?></label></li>
+<li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_tags' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_tags' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_tags ); ?> />
+<label class="choice" ><?php esc_html_e('Tags count', 'display-site-numbers'); ?></label></li>
+<li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_comm' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_comm' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_comm ); ?> />
+<label class="choice" ><?php esc_html_e('Comments count', 'display-site-numbers'); ?></label></li>
+<li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_imgs' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_imgs' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_imgs ); ?> />
+<label class="choice" ><?php esc_html_e('Images count', 'display-site-numbers'); ?></label></li></span>
 </li></ul></p>
 <?php
   }
@@ -132,7 +132,7 @@ public function widget( $args, $instance ) {
 
   public function update( $new_instance, $old_instance ) {
     $instance = $old_instance;
-    $instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags(   $new_instance['title'] ) : '';
+    $instance['title'] = ( ! empty( $new_instance['title'] ) ) ? wp_strip_all_tags( $new_instance['title'] ) : '';
      $instance['ck_posts'] = $new_instance['ck_posts'];
      $instance['ck_pages'] = $new_instance['ck_pages'];
      $instance['ck_cats'] = $new_instance['ck_cats'];
@@ -193,7 +193,7 @@ function DSN_counters() {
 /*************** Dress the rows ****************/
 
   function DSN_dressit($item, $count) {
-    echo "<li><span class='item'>".$item.": </span><span class='count'>". $count."</span></li>";
+    echo "<li><span class='item'>" . esc_html( $item ) . ": </span><span class='count'>" . esc_html( $count ) . "</span></li>";
 
   }
 
@@ -209,7 +209,7 @@ add_action( 'widgets_init', 'DSN_load_widget' );
 /* Localization */
 
 function DSN_load_i18n(){
-  load_plugin_textdomain( 'display-site-numbers', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+  // load_plugin_textdomain disabled: WordPress.org handles translations automatically.
   }
   add_action( 'plugins_loaded', 'DSN_load_i18n' );
 
@@ -256,7 +256,7 @@ function DSN_list($atts) {
         foreach ($post_types as $post_type) {
             $label = $post_type->labels->name; // Get plural label of the post type
             $count = wp_count_posts($post_type->name)->publish;
-            DSN_dressit(__($label, 'display-site-numbers'), $count);
+            DSN_dressit( esc_html( $label ), absint( $count ) );
         }
     }
 
