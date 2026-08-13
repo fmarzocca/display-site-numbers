@@ -3,7 +3,7 @@
   Plugin Name: Display Site Numbers
   Plugin URI: https://github.com/fmarzocca/display-site-numbers
   Description: A widget to display all relevant site content numbers
-  Version: 1.2
+  Version: 1.2.1
   Author: Fabio Marzocca
   Author URI: http://www.marzocca.net
   Text Domain:   display-site-numbers
@@ -29,6 +29,8 @@
 
 defined('ABSPATH') or die("No script kiddies please!");
 define('DSN_DIR', dirname(__FILE__));
+define('DSN_ATTACHMENT_COUNT_CACHE_KEY', 'display_site_numbers_attachment_count');
+define('DSN_ATTACHMENT_COUNT_CACHE_GROUP', 'display_site_numbers');
 
 
 class display_site_numbers extends WP_Widget {
@@ -57,7 +59,7 @@ function DSN_css(){
 /******** Creating widget front-end ********************************/
 
 public function widget( $args, $instance ) {
-    extract($args);
+    $instance = wp_parse_args( (array) $instance, DSN_widget_defaults() );
     $title = apply_filters( 'widget_title', $instance['title'] );
 
     // before and after widget arguments are defined by themes
@@ -67,10 +69,22 @@ public function widget( $args, $instance ) {
 
     // This is where you run the code and display the output
     $count_arr = DSN_counters();
+    $counter_settings = array(
+        'posts' => 'ck_posts',
+        'pages' => 'ck_pages',
+        'cats'  => 'ck_cats',
+        'auth'  => 'ck_auth',
+        'tags'  => 'ck_tags',
+        'comm'  => 'ck_comm',
+        'imgs'  => 'ck_imgs',
+    );
     echo '<div class="DSN-wrapper"><ul>';
     foreach ($count_arr as $key => $count) {
+        if ( isset( $counter_settings[ $key ] ) && empty( $instance[ $counter_settings[ $key ] ] ) ) {
+            continue;
+        }
         $label = ucwords(str_replace('_', ' ', $key)); // Converts 'custom_post' to 'Custom Post'
-        DSN_dressit( esc_html( $label ), absint( $count ) );
+        DSN_dressit( $label, absint( $count ) );
     }
     echo "</ul></div>";
     echo wp_kses_post( $args['after_widget'] );
@@ -80,66 +94,56 @@ public function widget( $args, $instance ) {
 /********** Widget Backend **********************************/
 
   public function form( $instance ) {
-    if ($instance) {
-      $title = $instance[ 'title' ];
-      $ck_posts = $instance['ck_posts'];
-      $ck_pages = $instance['ck_pages'];
-      $ck_cats = $instance['ck_cats'];
-      $ck_auth = $instance['ck_auth'];
-      $ck_tags = $instance['ck_tags'];
-      $ck_comm = $instance['ck_comm'];
-      $ck_imgs = $instance['ck_imgs'];
-    }
-    else {
-      $title = __( 'Total Site Numbers', 'display-site-numbers' );
-      $ck_posts = "1";
-      $ck_pages = "1";
-      $ck_cats = "1";
-      $ck_auth = "1";
-      $ck_tags = "1";
-      $ck_comm = "1";
-      $ck_imgs = "1";
-    }
+    $instance = wp_parse_args( (array) $instance, DSN_widget_defaults() );
+    $title = $instance['title'];
+    $ck_posts = $instance['ck_posts'];
+    $ck_pages = $instance['ck_pages'];
+    $ck_cats = $instance['ck_cats'];
+    $ck_auth = $instance['ck_auth'];
+    $ck_tags = $instance['ck_tags'];
+    $ck_comm = $instance['ck_comm'];
+    $ck_imgs = $instance['ck_imgs'];
     // Widget admin form
     ?>
 <p>
 <label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e('Title:', 'display-site-numbers'); ?></label>
 <input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'title' ) ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>" />
 </p>
-<p>
-
-<label class="description" for="element_1"><?php esc_html_e('Select what to display:', 'display-site-numbers'); ?></label>
-    <span>
-      <ul><li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_posts' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_posts' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_posts ); ?> />
-<label class="choice" ><?php esc_html_e('Posts count', 'display-site-numbers'); ?></label></li>
+<fieldset>
+<legend class="description"><?php esc_html_e('Select what to display:', 'display-site-numbers'); ?></legend>
+<ul>
+<li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_posts' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_posts' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_posts ); ?> />
+<label class="choice" for="<?php echo esc_attr( $this->get_field_id( 'ck_posts' ) ); ?>"><?php esc_html_e('Posts count', 'display-site-numbers'); ?></label></li>
 <li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_pages' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_pages' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_pages ); ?> />
-<label class="choice" ><?php esc_html_e('Pages count', 'display-site-numbers'); ?></label></li>
+<label class="choice" for="<?php echo esc_attr( $this->get_field_id( 'ck_pages' ) ); ?>"><?php esc_html_e('Pages count', 'display-site-numbers'); ?></label></li>
 <li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_cats' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_cats' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_cats ); ?> />
-<label class="choice" ><?php esc_html_e('Categories count', 'display-site-numbers'); ?></label></li>
+<label class="choice" for="<?php echo esc_attr( $this->get_field_id( 'ck_cats' ) ); ?>"><?php esc_html_e('Categories count', 'display-site-numbers'); ?></label></li>
 <li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_auth' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_auth' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_auth ); ?> />
-<label class="choice" ><?php esc_html_e('Authors count', 'display-site-numbers'); ?></label></li>
+<label class="choice" for="<?php echo esc_attr( $this->get_field_id( 'ck_auth' ) ); ?>"><?php esc_html_e('Authors count', 'display-site-numbers'); ?></label></li>
 <li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_tags' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_tags' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_tags ); ?> />
-<label class="choice" ><?php esc_html_e('Tags count', 'display-site-numbers'); ?></label></li>
+<label class="choice" for="<?php echo esc_attr( $this->get_field_id( 'ck_tags' ) ); ?>"><?php esc_html_e('Tags count', 'display-site-numbers'); ?></label></li>
 <li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_comm' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_comm' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_comm ); ?> />
-<label class="choice" ><?php esc_html_e('Comments count', 'display-site-numbers'); ?></label></li>
+<label class="choice" for="<?php echo esc_attr( $this->get_field_id( 'ck_comm' ) ); ?>"><?php esc_html_e('Comments count', 'display-site-numbers'); ?></label></li>
 <li><input id="<?php echo esc_attr( $this->get_field_id( 'ck_imgs' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'ck_imgs' ) ); ?>" type="checkbox" value="1" <?php checked( '1', $ck_imgs ); ?> />
-<label class="choice" ><?php esc_html_e('Images count', 'display-site-numbers'); ?></label></li></span>
-</li></ul></p>
+<label class="choice" for="<?php echo esc_attr( $this->get_field_id( 'ck_imgs' ) ); ?>"><?php esc_html_e('Images count', 'display-site-numbers'); ?></label></li>
+</ul>
+</fieldset>
 <?php
   }
 
 /****** Updating widget replacing old instances with new *****************/
 
   public function update( $new_instance, $old_instance ) {
-    $instance = $old_instance;
-    $instance['title'] = ( ! empty( $new_instance['title'] ) ) ? wp_strip_all_tags( $new_instance['title'] ) : '';
-     $instance['ck_posts'] = $new_instance['ck_posts'];
-     $instance['ck_pages'] = $new_instance['ck_pages'];
-     $instance['ck_cats'] = $new_instance['ck_cats'];
-     $instance['ck_auth'] = $new_instance['ck_auth'];
-     $instance['ck_tags'] = $new_instance['ck_tags'];
-     $instance['ck_comm'] = $new_instance['ck_comm'];
-     $instance['ck_imgs'] = $new_instance['ck_imgs'];
+    $instance = wp_parse_args( (array) $old_instance, DSN_widget_defaults() );
+    $new_instance = (array) $new_instance;
+    $instance['title'] = ! empty( $new_instance['title'] ) ? wp_strip_all_tags( $new_instance['title'] ) : '';
+    $instance['ck_posts'] = ! empty( $new_instance['ck_posts'] ) ? 1 : 0;
+    $instance['ck_pages'] = ! empty( $new_instance['ck_pages'] ) ? 1 : 0;
+    $instance['ck_cats']  = ! empty( $new_instance['ck_cats'] ) ? 1 : 0;
+    $instance['ck_auth']  = ! empty( $new_instance['ck_auth'] ) ? 1 : 0;
+    $instance['ck_tags']  = ! empty( $new_instance['ck_tags'] ) ? 1 : 0;
+    $instance['ck_comm']  = ! empty( $new_instance['ck_comm'] ) ? 1 : 0;
+    $instance['ck_imgs']  = ! empty( $new_instance['ck_imgs'] ) ? 1 : 0;
 
     return $instance;
   }
@@ -147,6 +151,27 @@ public function widget( $args, $instance ) {
 
 
 } // Class display_site_numbers ends here
+
+/**
+ * Defaults for widget instances, including instances saved before checkbox
+ * values were used by the front-end renderer.
+ *
+ * Missing values default to enabled so existing widgets do not lose counters
+ * when they are upgraded. Explicitly unchecked values are stored as 0 by
+ * update().
+ */
+function DSN_widget_defaults() {
+    return array(
+        'title'    => __( 'Total Site Numbers', 'display-site-numbers' ),
+        'ck_posts' => 1,
+        'ck_pages' => 1,
+        'ck_cats'  => 1,
+        'ck_auth'  => 1,
+        'ck_tags'  => 1,
+        'ck_comm'  => 1,
+        'ck_imgs'  => 1,
+    );
+}
 
 /********************** Utility Functions *********************************/
 
@@ -156,20 +181,32 @@ function DSN_counters() {
     global $wpdb;
     $count_arr = array();
     // Standard posts count
-    $count_arr['posts'] = wp_count_posts()->publish;
+    $post_counts = wp_count_posts();
+    $count_arr['posts'] = ( is_object( $post_counts ) && isset( $post_counts->publish ) ) ? absint( $post_counts->publish ) : 0;
     // Standard pages count
-    $count_arr['pages'] = wp_count_posts('page')->publish;
+    $page_counts = wp_count_posts( 'page' );
+    $count_arr['pages'] = ( is_object( $page_counts ) && isset( $page_counts->publish ) ) ? absint( $page_counts->publish ) : 0;
     // Images count
-    $count_arr['imgs'] = $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->prefix}posts WHERE post_type = 'attachment'");
+    $attachment_count_found = false;
+    $attachment_count = wp_cache_get( DSN_ATTACHMENT_COUNT_CACHE_KEY, DSN_ATTACHMENT_COUNT_CACHE_GROUP, false, $attachment_count_found );
+    if ( $attachment_count_found ) {
+        $count_arr['imgs'] = absint( $attachment_count );
+    } else {
+        $count_arr['imgs'] = absint( $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->prefix}posts WHERE post_type = 'attachment'" ) );
+        wp_cache_set( DSN_ATTACHMENT_COUNT_CACHE_KEY, $count_arr['imgs'], DSN_ATTACHMENT_COUNT_CACHE_GROUP );
+    }
     // Categories count
-    $count_arr['cats'] = wp_count_terms('category');
+    $categories_count = wp_count_terms( 'category' );
+    $count_arr['cats'] = is_wp_error( $categories_count ) ? 0 : absint( $categories_count );
     // Tags count
-    $count_arr['tags'] = wp_count_terms('post_tag');
+    $tags_count = wp_count_terms( 'post_tag' );
+    $count_arr['tags'] = is_wp_error( $tags_count ) ? 0 : absint( $tags_count );
     // Comments count
-    $count_arr['comm'] = wp_count_comments()->total_comments;
+    $comments_count = wp_count_comments();
+    $count_arr['comm'] = ( is_object( $comments_count ) && isset( $comments_count->total_comments ) ) ? absint( $comments_count->total_comments ) : 0;
     // Authors count
     $users = count_users();
-    $count_arr['auth'] = $users['avail_roles']['author'];
+    $count_arr['auth'] = isset( $users['avail_roles']['author'] ) ? absint( $users['avail_roles']['author'] ) : 0;
 
     // Loop through all public custom post types
     $args = array(
@@ -183,11 +220,19 @@ function DSN_counters() {
 
     foreach ($post_types as $post_type) {
         // Count each custom post type's published posts
-        $count_arr[$post_type] = wp_count_posts($post_type)->publish;
+        $post_type_counts = wp_count_posts( $post_type );
+        $count_arr[ $post_type ] = ( is_object( $post_type_counts ) && isset( $post_type_counts->publish ) ) ? absint( $post_type_counts->publish ) : 0;
     }
 
     return $count_arr;
 }
+
+// Invalidate only this plugin's attachment count when the row set changes.
+function DSN_clear_attachment_count_cache() {
+    wp_cache_delete( DSN_ATTACHMENT_COUNT_CACHE_KEY, DSN_ATTACHMENT_COUNT_CACHE_GROUP );
+}
+add_action( 'add_attachment', 'DSN_clear_attachment_count_cache' );
+add_action( 'delete_attachment', 'DSN_clear_attachment_count_cache' );
 
 
 /*************** Dress the rows ****************/
@@ -221,42 +266,65 @@ function DSN_list($atts) {
     // Adding "Types" to the default 'show' attribute list to include custom post types by default
     $atts = shortcode_atts(array(
         'show' => "Categories, Posts, Pages, Images, Authors, Tags, Comments, Types"
-    ), $atts);
+    ), (array) $atts, 'DSN-list');
+
+    // Enqueue only when the shortcode is actually rendered.
+    wp_enqueue_style( 'DSN_css', plugins_url( 'DSN.css', __FILE__ ) );
+
+    $valid_options = array(
+        'authors'    => 'Authors',
+        'categories' => 'Categories',
+        'posts'      => 'Posts',
+        'pages'      => 'Pages',
+        'comments'   => 'Comments',
+        'tags'       => 'Tags',
+        'images'     => 'Images',
+        'types'      => 'Types',
+    );
+    $show = is_string( $atts['show'] ) ? $atts['show'] : '';
+    $requested_options = array();
+    foreach ( explode( ',', $show ) as $option ) {
+        $option = strtolower( trim( $option ) );
+        if ( isset( $valid_options[ $option ] ) ) {
+            $requested_options[ $valid_options[ $option ] ] = true;
+        }
+    }
 
     $count_arr = DSN_counters();
     ob_start();
     echo '<div class="DSN-wrapper"><ul>';
 
     // Display counts for standard selections
-    if (strpos($atts['show'], "Authors") !== false) {
+    if ( isset( $requested_options['Authors'] ) ) {
         DSN_dressit(__('Authors', 'display-site-numbers'), $count_arr['auth']);
     }
-    if (strpos($atts['show'], "Categories") !== false) {
+    if ( isset( $requested_options['Categories'] ) ) {
         DSN_dressit(__('Categories', 'display-site-numbers'), $count_arr['cats']);
     }
-    if (strpos($atts['show'], "Posts") !== false) {
+    if ( isset( $requested_options['Posts'] ) ) {
         DSN_dressit(__('Posts', 'display-site-numbers'), $count_arr['posts']);
     }
-    if (strpos($atts['show'], "Pages") !== false) {
+    if ( isset( $requested_options['Pages'] ) ) {
         DSN_dressit(__('Pages', 'display-site-numbers'), $count_arr['pages']);
     }
-    if (strpos($atts['show'], "Comments") !== false) {
+    if ( isset( $requested_options['Comments'] ) ) {
         DSN_dressit(__('Comments', 'display-site-numbers'), $count_arr['comm']);
     }
-    if (strpos($atts['show'], "Tags") !== false) {
+    if ( isset( $requested_options['Tags'] ) ) {
         DSN_dressit(__('Tags', 'display-site-numbers'), $count_arr['tags']);
     }
-    if (strpos($atts['show'], "Images") !== false) {
+    if ( isset( $requested_options['Images'] ) ) {
         DSN_dressit(__('Images', 'display-site-numbers'), $count_arr['imgs']);
     }
 
     // Display counts for all custom post types as a group under "Types"
-    if (strpos($atts['show'], "Types") !== false) {
+    if ( isset( $requested_options['Types'] ) ) {
         $post_types = get_post_types(array('public' => true, '_builtin' => false), 'objects');
         foreach ($post_types as $post_type) {
             $label = $post_type->labels->name; // Get plural label of the post type
-            $count = wp_count_posts($post_type->name)->publish;
-            DSN_dressit( esc_html( $label ), absint( $count ) );
+            $post_type_counts = wp_count_posts( $post_type->name );
+            $count = ( is_object( $post_type_counts ) && isset( $post_type_counts->publish ) ) ? $post_type_counts->publish : 0;
+            DSN_dressit( $label, absint( $count ) );
         }
     }
 

@@ -6,8 +6,8 @@ Contributors: fmarzocca, dylan-k
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=58XFDXEP4336Y
 Tags: widget, count posts, count categories, counters
 Requires at least: 4.0.1
-Tested up to: 7.0
-Stable tag: 1.2
+Tested up to: 7.1
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,13 +36,13 @@ Add this shortcode in your page/post:
 <pre><code>
 [DSN-list]
 </code></pre>
-to show all the 6 counters. If you want to specify what counter(s) to show, use this syntax;
+to show all available counters. If you want to specify what counter(s) to show, use this syntax;
 
 <pre><code>
 [DSN-list show="Categories, Comments, Posts]
 </code></pre>
 
-Valid terms in the list are: Categories, Comments, Posts, Pages, Authors, Images, Tags.
+Valid terms in the list are: Categories, Comments, Posts, Pages, Authors, Images, Tags, Types.
 
 
 > If you like the plugin, feel free to rate it (on the right side of this page) or [donate via PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=58XFDXEP4336Y). Thanks a lot! :)
@@ -66,6 +66,13 @@ Valid terms in the list are: Categories, Comments, Posts, Pages, Authors, Images
 4. A view of the shortcode output in a post/page.
 
 == Changelog ==
+
+= 1.2.1 =
+* Fixed widget checkbox selections so they control displayed counters.
+* Improved compatibility with legacy and incomplete widget instances.
+* Hardened runtime behavior for PHP 8 and improved counter error handling.
+* Improved shortcode option validation and ensured shortcode CSS loads when needed.
+* Added object caching for the attachment count and corrected widget admin markup.
 
 = 1.0 =
 * Adding support for custom post types
